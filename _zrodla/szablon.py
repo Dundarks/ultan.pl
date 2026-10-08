@@ -126,6 +126,15 @@ SCHEMA = """<script type="application/ld+json">
 </script>"""
 
 
+JEDNOLITEROWE = re.compile(r"(?<![\w&;])([aiouwzAIOUWZ])\s+(?=\S)")
+
+
+def sieroty(html):
+    """Twarda spacja po jednoliterowych wyrazach (w, z, u, i, o, a) — tylko w tekście, nie w tagach i skryptach."""
+    czesci = re.split(r"(<script.*?</script>|<style.*?</style>|<[^>]+>)", html, flags=re.S)
+    return "".join(c if c.startswith("<") else JEDNOLITEROWE.sub("\\1\u00a0", c) for c in czesci)
+
+
 def zbuduj(plik):
     tekst = plik.read_text(encoding="utf-8")
     meta = dict(re.findall(r"<!--\s*(\w+):\s*(.*?)\s*-->", tekst.split("\n\n", 1)[0]))
@@ -166,6 +175,7 @@ def zbuduj(plik):
 </body>
 </html>
 """
+    html = sieroty(html)
     cel = ROOT / adres / "index.html" if adres else ROOT / "index.html"
     if plik.stem == "404":
         cel = ROOT / "404.html"
